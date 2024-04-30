@@ -18,7 +18,9 @@ upload_to_s3:
   stage: deploy
   needs:
     - build
-  image: amazon/aws-cli
+  image:
+    name: amazon/aws-cli
+    entrypoint: [""]
   script:
     - aws --version
     - cd frontend/dist/frontend/browser
