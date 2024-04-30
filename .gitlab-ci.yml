@@ -1,6 +1,7 @@
 stages:
   - build
   - deploy
+  - deploy-backend
 
 build:
   stage: build
@@ -25,4 +26,21 @@ upload_to_s3:
     - aws --version
     - cd frontend/dist/frontend/browser
     - ls -la
-    - aws s3 cp . s3://$AWS_S3_BUCKET/ --recursive
+    - aws s3 cp . s3://$AWS_S3_BUCKET/ --recursive --acl public-read
+  rules:
+        - if: '$CI_COMMIT_TAG'
+
+ansible-to-ec2:
+  stage: deploy-backend
+  image: williamyeh/ansible:alpine3
+  before_script:
+    - echo "$PRIVATE_KEY" > ./temp_key.pem
+    - chmod 600 ./temp_key.pem
+    - export ANSIBLE_HOST_KEY_CHECKING=False
+  script:
+    - ansible --version
+    - ansible-playbook -i hosts.ini deploy-backend.yml --private-key=./temp_key.pem
+    - rm -f ./temp_key.pem
+  rules:
+        - if: '$CI_COMMIT_TAG'
+
