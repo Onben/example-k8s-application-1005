@@ -1,28 +1,26 @@
-# Node Image for docker on which code will execute
-image: node:latest
-
-# This is the stages / task to perfom in jobs
 stages:
   - build
   - deploy
-    
-# This command is run before the execution of stages    
-before_script:
-  - npm install
 
-# Job One for making build
-build_master: 
+build:
   stage: build
+  image: node:latest
   script:
-  - npm run build
-  only: ['master']
+    - cd frontend
+    - npm install
+    - npm run build
+    - ls -la
+  artifacts:
+    paths:
+      - frontend/dist/frontend/browser
 
-# Job Two for deploy build to S3
-deploy_master:
-  image: python:latest  
+upload_to_s3:
   stage: deploy
-  before_script:
-    - pip install awscli 
+  needs:
+    - build
+  image: amazon/aws-cli
   script:
-    - aws s3 sync ./dist s3://k8sbucket30042024gitlab/ --acl=public-read --delete
-  only: ['master']
+    - aws --version
+    - cd frontend/dist/frontend/browser
+    - ls -la
+    - aws s3 cp . s3://$AWS_S3_BUCKET/ --recursive
