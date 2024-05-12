@@ -65,6 +65,7 @@ jobs:
       - name: Deploy to S3
         run: |
           aws --version
+          cd frontend/dist/frontend/browser
           aws s3 cp frontend/dist s3://${{ secrets.AWS_S3_BUCKET}}/ --recursive
 
   build-backend:
