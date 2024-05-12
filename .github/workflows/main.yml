@@ -62,6 +62,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y python3-pip
           sudo pip3 install awscli
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+            aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
       
       - name: Deploy to S3
         run: |
