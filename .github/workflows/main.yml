@@ -1,0 +1,107 @@
+name: ci-cd pipeline
+on: [push]
+
+env:
+  IMAGE_NAME: onben/k8s-gitlab-example
+  IMAGE_TAG: 2.0.0
+
+jobs:
+  build-frontend:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: frontend
+
+      - name: Build frontend
+        run: npm run build
+        working-directory: frontend
+        env:
+          CI: false
+
+      - name: Save artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: frontend
+          path: frontend/dist
+  
+  awslogin:
+    runs-on: ubuntu-latest
+    steps:
+        - name: Configure AWS Credentials
+          uses: aws-actions/configure-aws-credentials@v4
+          with:
+            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+            aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+  deploy-frontend:
+    name: Deploy Frontend
+    runs-on: ubuntu-latest
+    needs: build-frontend
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: frontend
+          path: frontend/dist
+      
+      - name: Install AWS CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip
+          sudo pip3 install awscli
+      
+      - name: Deploy to S3
+        run: |
+          aws --version
+          aws s3 cp frontend/dist s3://${{ secrets.AWS_S3_BUCKET}}/ --recursive
+
+  build-backend:
+    name: Build Backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Login to Docker Hub
+        run: echo ${{ secrets.DOCKER_TOKEN}} | docker login -u ${{ secrets.DOCKER_USERNAME}} --password-stdin
+
+      - name: Build Docker image
+        run: |
+          docker build -t k8s-gitlab-example:2.0.0 ./backend
+          docker images
+
+      - name: Push Docker image
+        run: docker push k8s-gitlab-example:2.0.0
+
+  deploy-backend:
+    name: Deploy Backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Install Ansible
+        run: sudo apt-get install ansible
+
+      - name: Deploy backend using Ansible
+        run: |
+          echo ${{ secrets.PRIVATE_KEY}} > ./temp_key.pem
+          chmod 600 ./temp_key.pem
+          export ANSIBLE_HOST_KEY_CHECKING=False
+          ansible-playbook -i hosts.ini deploy_backend.yml --private-key=./temp_key.pem
+          rm -f ./temp_key.pem
+
+
+
