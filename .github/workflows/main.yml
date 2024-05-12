@@ -74,7 +74,7 @@ jobs:
         run: |
           aws --version
           cd frontend/dist/frontend/browser
-          aws s3 cp . s3://${{ secrets.AWS_S3_BUCKET}}/ --recursive
+          aws s3 cp . s3://${{ secrets.AWS_S3_BUCKET}}/ --recursive --acl public-read
 
 
   build-backend:
