@@ -34,7 +34,7 @@ jobs:
           name: frontend
           path: frontend/dist
   
-          
+
   awslogin:
     runs-on: ubuntu-latest
     steps:
@@ -69,6 +69,7 @@ jobs:
           cd frontend/dist/frontend/browser
           aws s3 cp frontend/dist s3://${{ secrets.AWS_S3_BUCKET}}/ --recursive
 
+          
   build-backend:
     name: Build Backend
     runs-on: ubuntu-latest
