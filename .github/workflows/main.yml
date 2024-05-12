@@ -100,7 +100,7 @@ jobs:
 
       - name: Deploy backend using Ansible
         run: |
-          echo ${{ secrets.PRIVATE_KEY}} > ./temp_key.pem
+          echo "${{ secrets.PRIVATE_KEY}}" > ./temp_key.pem
           chmod 600 ./temp_key.pem
           export ANSIBLE_HOST_KEY_CHECKING=False
           ansible-playbook -i hosts.ini deploy_backend.yml --private-key=./temp_key.pem
